@@ -1,0 +1,61 @@
+    def __update_world(self):
+        none_cord_list = []
+        actor_not_satisfied: List[Tuple[int, int]] = []
+        for row_num in range(self.SIDE):
+            for col_num in range(self.SIDE):
+                none_cord_list = self.create_none_matrix(none_cord_list, row_num, col_num)
+                actor_color = self.world[row_num][col_num]
+                nr_of_same_color, none_list = self.neighbourhood_update(row_num, col_num, actor_color)
+                satisfaction = self.get_actor_satisfaction(none_list,nr_of_same_color )
+                satisfied = self.is_actor_satisfied(satisfaction)
+                self.update_not_satisfied(row_num, col_num, actor_not_satisfied, satisfied)
+        self.move_actors(none_cord_list, actor_not_satisfied)
+
+    def move_actors(self, none_cord_list, actor_not_satisfied):
+        shuffle(actor_not_satisfied)
+        for x, y in actor_not_satisfied:
+            new_x, new_y = choice(none_cord_list)
+            self.world[new_x][new_y] = self.world[x][y]
+            self.world[x][y] = Actor.NONE
+            none_cord_list.remove((new_x, new_y))
+
+    def create_none_matrix(self, none_cord_list, row_num, col_num):
+        if self.world[row_num][col_num] == Actor.NONE:
+            none_cord_list.append((row_num, col_num))
+        return none_cord_list
+
+    def update_not_satisfied(self, row_num, col_num, actor_not_satisfied, satisfied):
+        if not satisfied:
+            actor_not_satisfied.append((row_num, col_num))
+        return actor_not_satisfied
+
+    def is_actor_satisfied(self, satisfaction):
+        if satisfaction > self.THRESHOLD:
+            return True
+
+    def get_actor_satisfaction(self, none_list, nr_of_same_color):
+        if (8-none_list) <= 0:
+            none_list = 7
+        satisfaction = int(1 - nr_of_same_color/((8-none_list)))
+        return satisfaction
+
+    def neighbourhood_update(self, row_num, col_num, actor_color):
+        a_list = []
+        none_list = 0
+        start_row_num, end_row_num = (max(0, row_num - 1), min(self.SIDE, row_num + 2))
+        start_col_num, end_col_num = (max(0, col_num - 1), min(self.SIDE, col_num + 2))
+        for i in range(start_row_num, end_row_num):
+            for j in range(start_col_num, end_col_num):
+                if not (i == row_num and j == col_num):
+                    a_list.append(self.world[i][j])
+                    if self.world[i][j] == Actor.NONE:
+                        none_list +=1
+        nr_of_same_color = self.count(a_list, actor_color)
+        return nr_of_same_color, none_list
+
+    def count(self, a_list, actor_color):
+        the_count = 0
+        for a in a_list:
+            if a == actor_color:
+                the_count += 1
+        return the_count

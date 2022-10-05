@@ -1,0 +1,171 @@
+# package calculator
+
+from math import nan
+from enum import Enum
+from Stack import *
+# A calculator for rather simple arithmetic expressions.
+# Your task is to implement the missing functions so the
+# expressions evaluate correctly. Your program should be
+# able to correctly handle precedence (including parentheses)
+# and associativity - see helper functions.
+# The easiest way to evaluate infix expressions is to transform
+# them into postfix expressions, using a stack structure.
+# For example, the expression 2*(3+4)^5 is first transformed
+# to [ 3 -> 4 -> + -> 5 -> ^ -> 2 -> * ] and then evaluated
+# left to right. This is known as Reverse Polish Notation,
+# see: https://en.wikipedia.org/wiki/Reverse_Polish_notation
+#
+# NOTE:
+# - You do not need to implement negative numbers
+#
+# To run the program, run either CalculatorREPL or CalculatorGUI
+
+MISSING_OPERAND:  str = "Missing or bad operand"
+DIV_BY_ZERO:      str = "Division with 0"
+MISSING_OPERATOR: str = "Missing operator or parenthesis"
+OP_NOT_FOUND:     str = "Operator not found"
+OPERATORS:        str = "+-*/^"
+
+class parenthesis(ValueError):
+    pass
+
+class Op_not_found(IndexError):
+    pass
+class DIVED_BY_ZERO(ZeroDivisionError):
+    pass
+
+def infix_to_postfix(tokens):
+    output = []
+    operator_stack = Stack()
+    for token in tokens:
+        if type(token) is float: # Is the token a number?
+            output.append(token)
+        elif token in OPERATORS: # Is the token an operator?
+            while not operator_stack.is_empty() and not operator_stack.peek() == "(":
+                token_has_less_precedence(operator_stack, output, token)
+                operator_stack.push(token)
+            operator_stack.push(token)
+        elif token == "(": # Now all ops and num will be placed inside the left parenthesis
+            operator_stack.push(token)
+        elif token == ")":
+            try:
+                while not operator_stack.is_empty() and not operator_stack.peek() == "(":
+                    last_op = operator_stack.pop() # Adds all ops into output 'til we have reached the ( like:(<-5<-*<-5
+                    output.append(last_op)
+                print(operator_stack.pop())  # Remove ( from stack
+            except ValueError:
+                raise parenthesis
+    while not operator_stack.is_empty():
+        output.append(operator_stack.pop())
+    return output
+
+def token_has_less_precedence(operator_stack, output, token):
+    if get_precedence(token) < get_precedence(operator_stack.peek()) or\
+            (get_precedence(token) == get_precedence(operator_stack.peek())) \
+            and get_associativity(token) == Assoc.LEFT:
+        less_precedence_token = operator_stack.pop()
+        output.append(less_precedence_token)
+    #get_precedence(token) < get_precedence(operator_stack.head) or get_precedence(token) == get_precedence(operator_stack.head) \and get_associativity(token) == Assoc.LEFT:
+
+# -----  Evaluate RPN expression -------------------
+def eval_postfix(postfix_tokens):
+    temp_calc_list = []
+    while postfix_tokens:
+        token = postfix_tokens.pop(0)
+        if type(token) is float:
+            temp_calc_list.append(token)
+        elif token in OPERATORS:
+            print(temp_calc_list[0])
+            print(temp_calc_list[1])
+            try:
+                new_num = apply_operator(token,temp_calc_list.pop(0),temp_calc_list.pop(0))
+                temp_calc_list.append(new_num)
+            except ZeroDivisionError:
+                raise DIV_BY_ZERO
+    if len(temp_calc_list) > 1:
+        raise Op_not_found
+    return temp_calc_list[0]
+
+# Method used in REPL
+def eval_expr(expr: str):
+    try:
+        if len(expr) == 0:
+            return nan
+        tokens = tokenize(expr)
+        postfix_tokens = infix_to_postfix(tokens)
+        return eval_postfix(postfix_tokens)
+    except parenthesis:
+        print(MISSING_OPERATOR)
+        return MISSING_OPERATOR
+    except Op_not_found:
+        print(OP_NOT_FOUND)
+        return OP_NOT_FOUND
+    except DIVED_BY_ZERO:
+        print(DIV_BY_ZERO)
+        return DIV_BY_ZERO
+
+def apply_operator(op: str, d1: float, d2: float) -> object:
+    op_switcher = {
+        "+": lambda x, y: x + y,
+        "-": lambda x, y: x - y,
+        "*": lambda x, y: x * y,
+        "/": lambda x, y: nan if x == 0 else y / x,
+        "^": lambda x, y: y ** x
+    }
+    fun_to_apply = op_switcher.get(op, ValueError(OP_NOT_FOUND))
+    return fun_to_apply(d1, d2)
+
+
+def get_precedence(op: str):
+    op_switcher = {
+        "+": 2,
+        "-": 2,
+        "*": 3,
+        "/": 3,
+        "^": 4
+    }
+    return op_switcher.get(op, ValueError(OP_NOT_FOUND))
+
+
+class Assoc(Enum):
+    LEFT = 1
+    RIGHT = 2
+
+
+def get_associativity(op: str):
+    if op in "+-*/":
+        return Assoc.LEFT
+    elif op in "^":
+        return Assoc.RIGHT
+    else:
+        return ValueError(OP_NOT_FOUND)
+
+
+# ---------- Tokenize -----------------------
+def tokenize(expr: str):
+    sliced = slicer(expr)
+    return sliced
+
+def slicer (expr):
+    sliced = []
+    numbers = ""
+    op_list = ["*", "/", "+", "-", "^", "(", ")"]
+    expr = expr.replace(" ","")
+    for elem in expr:
+        if elem not in op_list:
+            numbers += elem
+        elif elem in op_list:
+            if numbers != "":
+                numbers = float(numbers)
+            sliced.append(numbers)
+            sliced.append(elem)
+            numbers = ""
+    while "" in sliced:
+        sliced.remove("")
+    if elem not in op_list:
+        sliced.append(float(numbers))
+    print(sliced)
+    return sliced
+
+
+# TODO Possibly more methods

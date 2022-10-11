@@ -1,6 +1,6 @@
 # package pong.view
 import pygame
-import pong
+
 from pong.model import *
 from pong.event.ModelEvent import ModelEvent
 from pong.event.EventBus import EventBus
@@ -8,10 +8,10 @@ from pong.event.EventHandler import EventHandler
 from pong.model.Pong import Pong
 from pong.view.theme.Cool import Cool
 from pong.view.theme.Duckie import Duckie
-
-
-from pong.model.Paddle import PADDLE_SPEED, Paddle
+from pong.model.Paddle import Paddle
 from pong.model.Config import *
+from pong.assets import get_image
+
 class PongGUI:
     """
     The GUI for the Pong game (except the menu).
@@ -22,15 +22,16 @@ class PongGUI:
     See: https://en.wikipedia.org/wiki/Pong
     """
 
-    running = False    # Is game running?
+    running = False  # Is game running?
+    pygame.init()
     screen = pygame.display.set_mode([GAME_WIDTH, GAME_HEIGHT])
     BLACK = (0, 0, 0)
     WHITE = (255, 255, 255)
-    points_font = pygame.font.SysFont(None, 20)
-    game_over_font = pygame.font.SysFont(None, 72)
+    points_font = pygame.font.SysFont("dengxian", 20)
+    game_over_font = pygame.font.SysFont("dengxian", 72)
     clock = pygame.time.Clock()
-    Paddle_1 = Paddle
-    
+
+
     # ------- Keyboard handling ----------------------------------
     @classmethod
     def key_pressed(cls, event):
@@ -117,27 +118,45 @@ class PongGUI:
 
     # ---------- Rendering -----------------
     @classmethod
-    def render(cls):
+    def render(cls, assets):
+        score_player_1, score_player_2 = cls.draw_score_img()
+        rect_1 = score_player_1.get_rect()
+        rect_1.topleft = (5, 10)
+        cls.screen.blit(score_player_1, rect_1)
+        rect_2 = score_player_2.get_rect()
+        rect_2.topright = (GAME_WIDTH-5, 10)
+        cls.screen.blit(score_player_2, rect_2)
+        paddle_1 = Paddle(50, GAME_HEIGHT / 2)
+        paddle_2 = Paddle(GAME_WIDTH - 50, GAME_HEIGHT / 2)
+        paddle_1_img = get_image(C:\Users\Oskarme\PycharmProjects\pong\pong\assets\img)
+        cls.screen.blit(paddle_1_img)
+        pygame.draw.rect(cls.screen, cls.WHITE, (paddle_1.get_x(), paddle_1.get_y(), paddle_1.get_width(), paddle_1.get_height()))
+        pygame.draw.rect(cls.screen, cls.WHITE, (paddle_2.get_x(), paddle_2.get_y(), paddle_2.get_width(), paddle_2.get_height()))
+
+    @classmethod
+    def draw_background(cls):
         cls.screen.fill(cls.BLACK)
+
+    @classmethod
+    def draw_score_img(cls):
         player_1_points = 0
         player_2_points = 0
         text_1 = f"Player 1 points: {player_1_points}"
         text_2 = f"Player 2 points: {player_2_points}"
-        img_1 = cls.points_font.render(text_1, True, cls.WHITE)
-        img_2 = cls.points_font.render(text_2, True, cls.WHITE)
-        rect_1 = img_1.get_rect()
-        rect_2 = img_2.get_rect()
-        rect_1.topleft (10, 10)
-        rect_2.topright (10, 10)
-        cls.screen.blit(img_1, rect_1)
-        cls.screen.blit(img_2, rect_2)
-        pygame.draw.rect(cls.screen, cls.WHITE, )
+        score_player_1 = cls.points_font.render(text_1, True, cls.WHITE)
+        score_player_2 = cls.points_font.render(text_2, True, cls.WHITE)
+        return score_player_1, score_player_2
+
     # ---------- Game loop ----------------
 
     @classmethod
     def run(cls):
-        # TODO
-        pass
+        cls.draw_background()
+        running = True
+        while running:
+            cls.clock.tick(3)
+            cls.render()
+            pygame.display.flip()
 
     @classmethod
     def update(cls):

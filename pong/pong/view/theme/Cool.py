@@ -15,7 +15,7 @@ class Cool(Assets):
 
     background = Assets.get_image("coolBg.png")
 
-    Assets.bind(Ball, "coolBall.png")
+    Assets.bind(Ball, "Trolled.png")
 
     @classmethod
     def get_background(cls):

@@ -2,6 +2,7 @@
 
 import pong.event.ModelEvent
 import pong.event.EventBus
+from pong.model.Paddle import Paddle
 
 
 class Pong:
@@ -14,7 +15,11 @@ class Pong:
     points_left  = 0
     points_right = 0
 
-    # TODO Initialization
+    def __init__(self, paddle_1, paddle_2, ball):
+        self.paddle_1 = paddle_1
+        self.paddle_2 = paddle_2
+        self.ball = ball 
+        
 
     # --------  Game Logic -------------
 
@@ -42,8 +47,7 @@ class Pong:
 
     @classmethod
     def set_speed_right_paddle(cls, dy):
-        # TODO
-        pass
+        return Paddle.set_dy(dy)
 
     @classmethod
     def set_speed_left_paddle(cls, dy):

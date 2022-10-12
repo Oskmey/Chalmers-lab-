@@ -33,7 +33,14 @@ class PongGUI:
     points_font = pygame.font.SysFont("dengxian", 20)
     game_over_font = pygame.font.SysFont("dengxian", 72)
     clock = pygame.time.Clock()
-    ball = Ball(GAME_WIDTH/2, GAME_HEIGHT/2)
+    ball = Ball(GAME_WIDTH/2, GAME_HEIGHT/2) 
+    paddle_1 = Paddle(50, (GAME_HEIGHT/2))
+    paddle_2 = Paddle(GAME_WIDTH - 50, GAME_HEIGHT / 2)
+    ball_img = Assets.get_image("Ball.png").convert_alpha()
+    ball_img_height = (ball_img.get_height()/2)
+    ball_img_width = (ball_img.get_width()/2)
+    paddle_1_img = Assets.get_image("coolbluepaddle.png").convert()
+    paddle_2_img = Assets.get_image("coolredpaddle.png").convert()
 
     # ------- Keyboard handling ----------------------------------
     @classmethod
@@ -42,11 +49,9 @@ class PongGUI:
             return
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP:
-                # TODO
-                pass
+                Pong.set_speed_right_paddle(0, Paddle.MAX_DY)
             elif event.key == pygame.K_DOWN:
-                # TODO
-                pass
+                Pong.set_speed_right_paddle(0, -Paddle.MAX_DY)
             elif event.key == pygame.K_q:
                 # TODO
                 pass
@@ -56,7 +61,7 @@ class PongGUI:
 
     @classmethod
     def key_released(cls, event):
-        if not cls.running:
+        if not cls.running: #interval
             return
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_UP:
@@ -78,8 +83,9 @@ class PongGUI:
 
     @classmethod
     def new_game(cls):
-        # TODO rebuild OO model as needed
-        pass
+        pong = Pong(cls.paddle_1, cls.paddle_2, cls.ball)
+        #    keep_going &= self.__check_for_quit(event)
+        return cls.running
 
     @classmethod
     def kill_game(cls):
@@ -103,34 +109,31 @@ class PongGUI:
 
     # ---------- Theme handling ------------------------------
 
-    assets = None
+#    assets = None
 
-    @classmethod
-    def handle_theme(cls, menu_event):
-        s = "Cool"  # ((MenuItem) menu_event.getSource()).getText()
-        last_theme = cls.assets
-        try:
-            if s == "Cool":
-                cls.assets = Cool()
-            elif s == "Duckie":
-                cls.assets = Duckie()
-            else:
-                raise ValueError("No such assets " + s)
-        except IOError as ioe:
-            cls.assets = last_theme
+#    @classmethod
+#    def handle_theme(cls, menu_event):
+#        s = "Cool"  # ((MenuItem) menu_event.getSource()).getText()
+#        last_theme = cls.assets
+#        try:
+#            if s == "Cool":
+#                cls.assets = Cool()
+#            elif s == "Duckie":
+#                cls.assets = Duckie()
+#            else:
+#                raise ValueError("No such assets " + s)
+#        except IOError as ioe:
+#            cls.assets = last_theme
 
     # ---------- Rendering -----------------
     @classmethod
     def render(cls):
         cls.draw_background()
         cls.paste_score_on_surface()
-        paddle_1 = Paddle(50, GAME_HEIGHT / 2)
-        paddle_2 = Paddle(GAME_WIDTH - 50, GAME_HEIGHT / 2)
-       
         pygame.draw.circle(cls.screen, cls.WHITE, (cls.ball.get_center_x(), cls.ball.get_center_y()), (cls.ball.get_width()/2))
-        pygame.draw.rect(cls.screen, cls.WHITE, (paddle_1.get_x(), paddle_1.get_y(), paddle_1.get_width(), paddle_1.get_height()))
-        pygame.draw.rect(cls.screen, cls.WHITE, (paddle_2.get_x(), paddle_2.get_y(), paddle_2.get_width(), paddle_2.get_height()))
-        cls.render_texture_pong(paddle_1, paddle_2, cls.ball)
+        pygame.draw.rect(cls.screen, cls.WHITE, (cls.paddle_1.get_x(), cls.paddle_1.get_y() , cls.paddle_1.get_width(), cls.paddle_1.get_height()))
+        pygame.draw.rect(cls.screen, cls.WHITE, (cls.paddle_2.get_x(), cls.paddle_2.get_y(), cls.paddle_2.get_width(), cls.paddle_2.get_height()))
+        cls.render_texture_pong()
     
 
     @classmethod
@@ -144,19 +147,11 @@ class PongGUI:
         cls.screen.blit(score_player_2, rect_2)
 
     @classmethod
-    def render_texture_pong(cls, paddle_1, paddle_2, ball):
-        ball_img, paddle_1_img, paddle_2_img = cls.get_img()
-        cls.screen.blit(paddle_1_img, (paddle_1.get_x(), paddle_1.get_y()))
-        cls.screen.blit(paddle_2_img, (paddle_2.get_x(), paddle_2.get_y()))
-        cls.screen.blit(ball_img,(cls.ball.get_x(), cls.ball.get_y()))
+    def render_texture_pong(cls):
+        cls.screen.blit(cls.paddle_1_img, (cls.paddle_1.get_x(), cls.paddle_1.get_y()))
+        cls.screen.blit(cls.paddle_2_img, (cls.paddle_2.get_x(), cls.paddle_2.get_y()))
+        cls.screen.blit(cls.ball_img,(cls.ball.get_x() - cls.ball_img_width - 11, cls.ball.get_y()-cls.ball_img_height - 11))
 
-    @classmethod
-    def get_img(cls):
-        ball_img = Assets.get_image("Ball.png").convert_alpha()
-        ball_img = pygame.transform.scale(ball_img, (cls.ball.get_width(), cls.ball.get_height()))
-        paddle_1_img = Assets.get_image("coolbluepaddle.png").convert()
-        paddle_2_img = Assets.get_image("coolredpaddle.png").convert()
-        return ball_img, paddle_1_img, paddle_2_img
 
     @classmethod
     def draw_background(cls):
@@ -164,8 +159,8 @@ class PongGUI:
 
     @classmethod
     def draw_score_img(cls):
-        player_1_points = 0
-        player_2_points = 0
+        player_1_points = Pong.get_points_left()
+        player_2_points = Pong.get_points_right()
         text_1 = f"Player 1 points: {player_1_points}"
         text_2 = f"Player 2 points: {player_2_points}"
         score_player_1 = cls.points_font.render(text_1, True, cls.WHITE)
@@ -189,5 +184,7 @@ class PongGUI:
 
     @classmethod
     def handle_events(cls):
-        # TODO
+        events = pygame.event.get()
+        for event in events:
+            
         pass
